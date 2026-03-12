@@ -2,11 +2,16 @@ import 'package:go_router/go_router.dart';
 import 'screens/product_list_screen.dart';
 
 final appRouter = GoRouter(
-  initialLocation: '/',
+  initialLocation: AppRoutes.productListing,
   routes: [
     GoRoute(
-      path: '/',
+      path: AppRoutes.productListing,
       builder: (context, state) => const ProductListScreen(),
     ),
   ],
 );
+
+// Define route names for better maintainability
+class AppRoutes {
+  static const String productListing = '/';
+}

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/product_model.dart';
 import '../providers/product_list_provider.dart';
 import '../widgets/product_card.dart';
 import '../widgets/responsive_layout.dart';
@@ -23,20 +22,29 @@ class _ProductListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ProductListProvider>();
+    // Extract the grid so we can use it for both 'loaded' and 'refreshing' states
+    final loadedGrid = ResponsiveLayout(
+      mobile: _ProductGrid(provider: provider, crossAxisCount: 1),
+      tablet: _ProductGrid(provider: provider, crossAxisCount: 2),
+      desktop: _ProductGrid(provider: provider, crossAxisCount: 3),
+    );
 
     final grid = switch (provider.state) {
-      ProductListState.initial || ProductListState.loading =>
+      ProductListState.initial ||
+      ProductListState.loading =>
         const _SkeletonGrid(),
-      ProductListState.refreshing => const _SkeletonGrid(),
+      // Fix: Show the grid with a loading overlay instead of skeletons
+      ProductListState.refreshing => Stack(
+          children: [
+            loadedGrid,
+            const Center(child: CircularProgressIndicator()),
+          ],
+        ),
       ProductListState.error => _ErrorView(
           message: provider.errorMessage,
           onRetry: provider.loadProducts,
         ),
-      ProductListState.loaded => ResponsiveLayout(
-          mobile: _ProductGrid(provider: provider, crossAxisCount: 1),
-          tablet: _ProductGrid(provider: provider, crossAxisCount: 2),
-          desktop: _ProductGrid(provider: provider, crossAxisCount: 3),
-        ),
+      ProductListState.loaded => loadedGrid,
     };
 
     return Scaffold(
@@ -60,7 +68,8 @@ class _ProductListView extends StatelessWidget {
                 border: OutlineInputBorder(),
                 isDense: true,
               ),
-              onChanged: (_) {},
+              onChanged: (value) =>
+                  context.read<ProductListProvider>().filterProducts(value),
             ),
           ),
           Expanded(child: grid),
